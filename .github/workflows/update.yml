@@ -2,8 +2,8 @@ name: Ayna OTT Playlist Updater
 
 on:
   schedule:
-    - cron: "0 */2 * * *"
-  workflow_dispatch:
+    - cron: "0 */2 * * *"      # প্রতি ৬ ঘণ্টায় নতুন session
+  workflow_dispatch:            # ম্যানুয়ালি চালানোর জন্য
 
 permissions:
   contents: write
@@ -11,7 +11,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 360         # সর্বোচ্চ ৬ ঘণ্টা
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -23,26 +24,37 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install deps
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests aiohttp
+          pip install requests aiohttp curl_cffi
 
       - name: Run generator every 1 hour (6 times)
         env:
           AYNA_API_BASE: ${{ secrets.AYNA_API_BASE }}
+          AYNA_COOKIE:   ${{ secrets.AYNA_COOKIE }}
+          AYNA_TOKEN:    ${{ secrets.AYNA_TOKEN }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           for i in 1 2 3 4 5 6; do
+            echo "======================================"
             echo "===== RUN #$i at $(date -u) ====="
+            echo "======================================"
+
             python scripts/generator.py || echo "generator failed"
+
             git add Playlist/mrbotrx_ayna.m3u8 || true
-            git commit -m "auto: update $(date -u +%Y-%m-%dT%H:%MZ)" || echo "no changes"
+            git commit -m "auto: update playlist $(date -u +%Y-%m-%dT%H:%MZ)" || echo "no changes"
             git push || echo "push failed"
+
             if [ $i -lt 6 ]; then
-              echo "Sleeping 1 hour..."
+              echo "Sleeping 1 hour before next run..."
               sleep 3600
             fi
           done
+
+          echo "======================================"
+          echo "===== Session complete ====="
+          echo "======================================"
