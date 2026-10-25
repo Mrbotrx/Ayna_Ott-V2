@@ -1,3 +1,10 @@
+"""
+Ayna OTT V2 - Live TV M3U8 Playlist Generator
+✅ যেকোনো JSON key থেকে list খুঁজে বের করে
+✅ stream.url, images.poster_url, title, taxonomies.category
+✅ শুধু working .m3u8
+✅ Auto group + speed sort (fast আগে)
+"""
 
 import os
 import sys
@@ -105,6 +112,45 @@ def detect_group(name):
                 return group
     return "General"
 
+# ================= UNIVERSAL LIST FINDER =================
+def find_items(data, depth=0):
+    """
+    যেকোনো JSON structure থেকে list-of-dict বের করে।
+    depth limit 6, infinite recursion নিরাপদ।
+    """
+    if depth > 6:
+        return []
+
+    # data নিজেই list
+    if isinstance(data, list):
+        dicts = [x for x in data if isinstance(x, dict)]
+        if dicts:
+            return dicts
+        return []
+
+    if isinstance(data, dict):
+        # Priority keys
+        for k in ("data", "items", "results", "related", "streams",
+                  "contents", "channels", "list", "records", "rows",
+                  "videos", "live_tvs", "live-tvs"):
+            v = data.get(k)
+            if isinstance(v, list):
+                dicts = [x for x in v if isinstance(x, dict)]
+                if dicts:
+                    return dicts
+            if isinstance(v, dict):
+                r = find_items(v, depth + 1)
+                if r:
+                    return r
+
+        # Fallback: সব values scan
+        for v in data.values():
+            r = find_items(v, depth + 1)
+            if r:
+                return r
+
+    return []
+
 # ================= PARSE =================
 def fix_logo(url):
     if not url:
@@ -114,22 +160,26 @@ def fix_logo(url):
     return IMG_BASE + url
 
 def parse_api_response(data):
-    if not isinstance(data, dict):
+    items = find_items(data)
+    print(f"[i] find_items → {len(items)} items")
+    if not items:
+        # DEBUG: top-level keys দেখাও
+        if isinstance(data, dict):
+            print(f"[DEBUG] top keys = {list(data.keys())}")
+            print(f"[DEBUG] sample   = {str(data)[:400]}")
         return []
-    items = data.get("data") or data.get("items") or []
-    if not isinstance(items, list):
-        items = []
 
     out = []
     for it in items:
         if not isinstance(it, dict):
             continue
 
+        # নাম
         name = it.get("title") or it.get("name") or it.get("slug")
         if not name:
             continue
 
-        # Logo
+        # লোগো
         logo = ""
         images = it.get("images") or {}
         if isinstance(images, dict):
@@ -138,7 +188,7 @@ def parse_api_response(data):
                     or images.get("thumbnail_wide_url") or "")
         logo = fix_logo(logo)
 
-        # Stream
+        # স্ট্রিম (.m3u8)
         stream = ""
         st = it.get("stream") or {}
         if isinstance(st, dict):
@@ -153,7 +203,7 @@ def parse_api_response(data):
         if not stream or ".m3u8" not in stream:
             continue
 
-        # Group from taxonomies
+        # গ্রুপ
         group = None
         tax = it.get("taxonomies") or {}
         if isinstance(tax, dict):
