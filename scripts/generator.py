@@ -1,44 +1,51 @@
 """
-Ayna OTT V2 - Live TV M3U8 Playlist Generator
---------------------------------------------
-✅ Auto group (News/Sports/Movie/Music/Kids/Religious/Entertainment)
-✅ Speed অনুযায়ী সর্ট — fast আগে, slow পরে
-✅ সুন্দর Header + Auto count + Auto time
+Ayna OTT V2 - FULL AUTO Live TV M3U8 Playlist Generator
+------------------------------------------------------
+✅ Auto-detect
+✅ Cloudflare bypass (curl_cffi fallback)
+✅ Auto group + speed sort (fast আগে)
+✅ সুন্দর header + count + time
 """
 
 import os
 import sys
 import time
 import asyncio
-from datetime import datetime, timezone
 import requests
 import aiohttp
+from datetime import datetime, timezone, timedelta
 
-# ✅ API লিংক শুধু Secret থেকে
+# ================= CONFIG =================
 API_BASE = os.environ.get("AYNA_API_BASE", "").strip()
 if not API_BASE:
     print("[!] AYNA_API_BASE secret not set. Aborting.")
     sys.exit(0)
 
-SLUG        = "ntv"
+SLUG        = os.environ.get("AYNA_SLUG", "ntv")
 PER_PAGE    = 18
 START_PAGE  = 1
 END_PAGE    = 18
 OUTPUT      = "Playlist/mrbotrx_ayna.m3u8"
-TIMEOUT     = 12
+TIMEOUT     = 15
 CONCURRENCY = 25
 
-# ================= HEADER INFO =================
 AUTHOR      = "Mrbotrx"
 TELEGRAM    = "https://t.me/iptvlinksm3u8"
 PLAYLIST_ID = "Mrbotrx_ayna.m3u8"
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Linux; Android 13) "
+    "User-Agent": "Mozilla/5.0 (Linux; Android 13; SM-A536E) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
                   "Chrome/120.0.0.0 Mobile Safari/537.36",
     "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9,bn;q=0.8",
+    "Referer": "https://web.aynaott.com/",
+    "Origin":  "https://web.aynaott.com",
 }
+if os.environ.get("AYNA_COOKIE"):
+    HEADERS["Cookie"] = os.environ["AYNA_COOKIE"]
+if os.environ.get("AYNA_TOKEN"):
+    HEADERS["Authorization"] = f"Bearer {os.environ['AYNA_TOKEN']}"
 
 PINNED_ENTRY = (
     '#EXTINF:-1 tvg-id="" tvg-name="1 IPTV LINKS" '
@@ -47,99 +54,223 @@ PINNED_ENTRY = (
     'https://github.com/Mrbotrx/Mrbotrx/raw/refs/heads/main/IPTV_LINKS_VIDEO.mp4\n'
 )
 
+# ================= HTTP layer (Cloudflare fallback) =================
+try:
+    from curl_cffi import requests as cffi_requests
+    USE_CFFI = True
+    print("[i] curl_cffi available — Cloudflare bypass active")
+except Exception:
+    cffi_requests = None
+    USE_CFFI = False
+    print("[i] curl_cffi not installed — using requests")
+
+def http_get(url, params=None):
+    """GET with automatic Cloudflare fallback"""
+    try:
+        r = requests.get(url, params=params, headers=HEADERS, timeout=TIMEOUT)
+        if r.status_code in (403, 503) and USE_CFFI:
+            r = cffi_requests.get(url, params=params, headers=HEADERS,
+                                  timeout=TIMEOUT, impersonate="chrome120")
+        return r
+    except Exception:
+        if USE_CFFI:
+            try:
+                return cffi_requests.get(url, params=params, headers=HEADERS,
+                                         timeout=TIMEOUT, impersonate="chrome120")
+            except Exception:
+                pass
+    return None
+
 # ================= AUTO GROUP =================
 GROUP_RULES = [
-    ("News", [
-        "news", "somoy", "jamuna", "channel 24", "channel24", "dbc",
-        "ekattor", "atn news", "independent", "r tv", "rtv",
-        "bangla vision", "btv", "ntv", "gazi", "maasranga", "channel i",
-        "desh", "samakal", "jugantor", "prothom", "abc", "cnn", "bbc",
-        "aljazeera", "al jazeera", "sky news", "dw", "france 24",
-    ]),
-    ("Sports", [
-        "sports", "sport", "star sports", "sony ten", "sony sports",
-        "espn", "tsports", "t sports", "eurosport", "willow", "cricket",
-        "football", "ten sports", "bein", "supersport",
-    ]),
-    ("Movies", [
-        "movie", "cinema", "film", "hbo", "star movies", "sony pix",
-        "zee cinema", "colors cineplex", "star gold", "max", "action",
-        "thriller", "bollywood", "hollywood",
-    ]),
-    ("Music", [
-        "music", "mtv", "vh1", "9xm", "zoom", "b4u music", "trace",
-        "stingray", "classic", "song", "gaan", "radio",
-    ]),
-    ("Kids", [
-        "kids", "cartoon", "disney", "nick", "pogo", "chhota bheem",
-        "tom and jerry", "baby", "junior", "toon", "hungama",
-    ]),
-    ("Religious", [
-        "islam", "quran", "deen", "madani", "peace tv", "iqraa",
-        "hindu", "dharm", "sanatan", "krishna", "bhakti", "church",
-        "god", "spiritual", "aastha", "sanskar",
-    ]),
-    ("Entertainment", [
-        "entertainment", "star plus", "zee tv", "colors", "sony",
-        "star jalsha", "zee bangla", "sun", "vijay", "asianet",
-        "comedy", "serial", "drama", "reality",
-    ]),
-    ("Lifestyle", [
-        "food", "travel", "cooking", "fashion", "home", "garden",
-        "tlc", "discovery", "nat geo", "national geographic", "animal planet",
-    ]),
+    ("News", ["news", "somoy", "jamuna", "channel 24", "channel24", "dbc",
+              "ekattor", "atn news", "independent", "r tv", "rtv",
+              "bangla vision", "btv", "ntv", "gazi", "maasranga", "channel i",
+              "desh", "samakal", "jugantor", "prothom", "abc", "cnn", "bbc",
+              "aljazeera", "al jazeera", "sky news", "dw", "france 24"]),
+    ("Sports", ["sports", "sport", "star sports", "sony ten", "sony sports",
+                "espn", "tsports", "t sports", "eurosport", "willow", "cricket",
+                "football", "ten sports", "bein", "supersport"]),
+    ("Movies", ["movie", "cinema", "film", "hbo", "star movies", "sony pix",
+                "zee cinema", "colors cineplex", "star gold", "max", "action",
+                "thriller", "bollywood", "hollywood"]),
+    ("Music", ["music", "mtv", "vh1", "9xm", "zoom", "b4u music", "trace",
+               "stingray", "classic", "song", "gaan", "radio"]),
+    ("Kids", ["kids", "cartoon", "disney", "nick", "pogo", "chhota bheem",
+              "tom and jerry", "baby", "junior", "toon", "hungama"]),
+    ("Religious", ["islam", "quran", "deen", "madani", "peace tv", "iqraa",
+                   "hindu", "dharm", "sanatan", "krishna", "bhakti", "church",
+                   "god", "spiritual", "aastha", "sanskar"]),
+    ("Entertainment", ["entertainment", "star plus", "zee tv", "colors", "sony",
+                       "star jalsha", "zee bangla", "sun", "vijay", "asianet",
+                       "comedy", "serial", "drama", "reality"]),
+    ("Lifestyle", ["food", "travel", "cooking", "fashion", "home", "garden",
+                   "tlc", "discovery", "nat geo", "national geographic",
+                   "animal planet"]),
 ]
 
 def detect_group(name: str) -> str:
     n = name.lower()
     for group, keys in GROUP_RULES:
         for k in keys:
-            if k.lower() in n:
+            if k in n:
                 return group
     return "General"
+
+# ================= RECURSIVE .m3u8 FINDER =================
+STREAM_KEYS = (
+    "stream_url", "m3u8", "play_url", "playback_url", "hls",
+    "hls_url", "video_url", "src", "link", "file", "manifest",
+    "stream", "url",
+)
+
+def find_m3u8(obj, depth=0):
+    """যেকোনো depth-এ .m3u8 URL খুঁজে বের করে"""
+    if depth > 8:
+        return None
+    if isinstance(obj, str):
+        return obj if ".m3u8" in obj else None
+    if isinstance(obj, dict):
+        for k in STREAM_KEYS:
+            if k in obj:
+                r = find_m3u8(obj[k], depth + 1)
+                if r:
+                    return r
+        for v in obj.values():
+            r = find_m3u8(v, depth + 1)
+            if r:
+                return r
+    if isinstance(obj, list):
+        for v in obj:
+            r = find_m3u8(v, depth + 1)
+            if r:
+                return r
+    return None
+
+def find_logo(obj):
+    if isinstance(obj, dict):
+        for k in ("logo", "thumbnail", "poster", "image", "icon", "cover"):
+            v = obj.get(k)
+            if isinstance(v, str) and v:
+                return v
+            if isinstance(v, dict):
+                for kk in ("url", "src", "original", "large", "medium"):
+                    if isinstance(v.get(kk), str) and v[kk]:
+                        return v[kk]
+    return ""
 
 # ================= FETCH =================
 def fetch_page(page: int):
     url = f"{API_BASE}/browse/live-tvs/{SLUG}/related"
     params = {"per_page": PER_PAGE, "sort": "similarity", "page": page}
+    r = http_get(url, params=params)
+    if not r:
+        print(f"[!] page={page} network fail")
+        return None
+    print(f"[i] page={page} status={r.status_code} size={len(r.content)}")
+    if r.status_code != 200:
+        return None
     try:
-        r = requests.get(url, params=params, headers=HEADERS, timeout=TIMEOUT)
-        print(f"[i] page={page} status={r.status_code} size={len(r.content)}")
-        if r.status_code != 200:
-            return None
         return r.json()
     except Exception as e:
-        print(f"[!] page={page} failed: {e}")
+        print(f"[!] page={page} json parse fail: {e}")
         return None
 
-# ================= PARSE =================
-def parse_api_response(data):
+# ================= 2-STEP RESOLVE =================
+def resolve_stream_from_id(item_id):
+    """item id থেকে playback endpoint চেষ্টা করে .m3u8 খুঁজে বের করে"""
+    endpoints = [
+        f"{API_BASE}/live-tvs/{item_id}/play",
+        f"{API_BASE}/live-tv/{item_id}/play",
+        f"{API_BASE}/browse/live-tvs/{item_id}",
+        f"{API_BASE}/live-tvs/{item_id}",
+        f"{API_BASE}/contents/{item_id}/play",
+    ]
+    for ep in endpoints:
+        r = http_get(ep)
+        if not r or r.status_code != 200:
+            continue
+        try:
+            data = r.json()
+        except Exception:
+            continue
+        url = find_m3u8(data)
+        if url:
+            print(f"[+] resolved via {ep}")
+            return url
+    return None
+
+# ================= PARSE (AUTO) =================
+LIST_KEYS = ("data", "items", "results", "contents", "channels",
+             "related", "list", "records", "rows")
+
+def extract_list(data):
+    """যেকোনো structure থেকে list of dict বের করে"""
+    if isinstance(data, list):
+        return data
     if not isinstance(data, dict):
         return []
-    items = data.get("data") or data.get("items") or data.get("results") or []
-    if isinstance(items, dict):
-        items = items.get("items") or items.get("data") or []
+
+    # direct key
+    for k in LIST_KEYS:
+        v = data.get(k)
+        if isinstance(v, list) and v and isinstance(v[0], dict):
+            return v
+
+    # nested dict
+    for k in LIST_KEYS:
+        v = data.get(k)
+        if isinstance(v, dict):
+            for k2 in LIST_KEYS:
+                v2 = v.get(k2)
+                if isinstance(v2, list) and v2 and isinstance(v2[0], dict):
+                    return v2
+
+    # যেকোনো প্রথম list of dict
+    for v in data.values():
+        if isinstance(v, list) and v and isinstance(v[0], dict):
+            return v
+        if isinstance(v, dict):
+            for v2 in v.values():
+                if isinstance(v2, list) and v2 and isinstance(v2[0], dict):
+                    return v2
+    return []
+
+def parse_api_response(data):
+    """সম্পূর্ণ auto — যেকোনো JSON থেকে চ্যানেল বের করে"""
+    items = extract_list(data)
+    if not items:
+        print("[!] No list found in response")
+        return []
 
     out = []
+    resolved_count = 0
+
     for it in items:
         if not isinstance(it, dict):
             continue
-        name = it.get("title") or it.get("name") or it.get("channel_name") or it.get("slug")
+
+        name = (it.get("title") or it.get("name")
+                or it.get("channel_name") or it.get("slug")
+                or it.get("label"))
         if not name:
             continue
-        logo = it.get("logo") or it.get("thumbnail") or it.get("image") or it.get("poster") or ""
-        stream = it.get("stream_url") or it.get("m3u8") or it.get("play_url") or it.get("url") or ""
+
+        logo = find_logo(it)
+
+        # 1st attempt: recursive m3u8
+        stream = find_m3u8(it)
+
+        # 2nd attempt: resolve by id
+        if not stream:
+            item_id = (it.get("id") or it.get("content_id")
+                       or it.get("video_id") or it.get("channel_id"))
+            if item_id and resolved_count < 100:
+                stream = resolve_stream_from_id(item_id)
+                if stream:
+                    resolved_count += 1
 
         if not stream:
-            for s in (it.get("sources") or []):
-                if isinstance(s, dict) and str(s.get("url", "")).endswith(".m3u8"):
-                    stream = s["url"]; break
-
-        if not stream and isinstance(it.get("content"), dict):
-            c = it["content"]
-            stream = c.get("stream_url") or c.get("m3u8") or c.get("url") or ""
-
-        if not stream or ".m3u8" not in str(stream):
             continue
 
         out.append({
@@ -147,6 +278,8 @@ def parse_api_response(data):
             "logo": logo or "",
             "url": stream,
         })
+
+    print(f"[i] Parsed {len(out)} channels (resolved by id: {resolved_count})")
     return out
 
 # ================= VALIDATE + SPEED =================
@@ -175,7 +308,6 @@ async def check_stream(session, url):
 async def validate_all(channels):
     sem = asyncio.Semaphore(CONCURRENCY)
     connector = aiohttp.TCPConnector(limit=CONCURRENCY, ssl=False)
-    results = []
 
     async with aiohttp.ClientSession(connector=connector, headers=HEADERS) as session:
         async def run(ch):
@@ -184,28 +316,18 @@ async def validate_all(channels):
                 if alive:
                     ch["speed_ms"] = ms
                     ch["group"] = detect_group(ch["name"])
-                    print(f"[✓] {ch['name']}  ({ms} ms)  [{ch['group']}]")
+                    print(f"[✓] {ch['name']} ({ms}ms) [{ch['group']}]")
                     return ch
-                else:
-                    print(f"[✗] {ch['name']}")
-                    return None
+                print(f"[✗] {ch['name']}")
+                return None
 
         out = await asyncio.gather(*(run(c) for c in channels))
-        results = [r for r in out if r]
-
-    return results
+    return [r for r in out if r]
 
 # ================= HEADER BUILDER =================
 def build_header(channel_count: int) -> str:
-    """
-    সুন্দর হেডার তৈরি করে — Auto count, Auto time সহ।
-    """
     now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    bd_time = datetime.now(timezone.utc)
-    # Bangladesh time (UTC+6) — optional
-    from datetime import timedelta
-    bd_time = (bd_time + timedelta(hours=6)).strftime("%Y-%m-%d %H:%M BST")
-
+    bd = (datetime.now(timezone.utc) + timedelta(hours=6)).strftime("%Y-%m-%d %H:%M BST")
     lines = [
         "#EXTM3U",
         "# ═══════════════════════════════════════",
@@ -215,7 +337,7 @@ def build_header(channel_count: int) -> str:
         f"# 👤 Author   : {AUTHOR}",
         f"# 📡 Telegram : {TELEGRAM}",
         f"# 🔢 Channels : {channel_count}",
-        f"# 🕒 Updated  : {now_utc}  |  {bd_time}",
+        f"# 🕒 Updated  : {now_utc}  |  {bd}",
         "# ═══════════════════════════════════════",
         "",
     ]
@@ -225,18 +347,13 @@ def build_header(channel_count: int) -> str:
 def write_playlist(channels):
     os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
 
-    # Fast first, slow last
-    channels.sort(key=lambda c: (c.get("speed_ms", 999999), c.get("group", ""), c["name"]))
+    channels.sort(key=lambda c: (c.get("speed_ms", 999999),
+                                 c.get("group", ""), c["name"]))
 
     with open(OUTPUT, "w", encoding="utf-8") as f:
-        # ✅ সুন্দর হেডার
         f.write(build_header(len(channels)))
-
-        # ✅ Pinned IPTV LINKS
         f.write(PINNED_ENTRY)
         f.write("\n")
-
-        # ✅ সব working চ্যানেল
         for ch in channels:
             name = ch["name"].replace(",", " ").replace('"', "")
             logo = ch["logo"]
@@ -246,11 +363,9 @@ def write_playlist(channels):
                 f'tvg-logo="{logo}" group-title="{group}",{name}\n'
                 f'{ch["url"]}\n'
             )
-
     print(f"[✓] Saved {len(channels)} channels → {OUTPUT}")
     from collections import Counter
-    summary = Counter(c["group"] for c in channels)
-    for g, cnt in summary.most_common():
+    for g, cnt in Counter(c["group"] for c in channels).most_common():
         print(f"    • {g}: {cnt}")
 
 # ================= MAIN =================
@@ -275,7 +390,6 @@ def main():
 
     valid = asyncio.run(validate_all(list(all_channels.values())))
     print(f"[i] Working channels: {len(valid)}")
-
     write_playlist(valid)
 
 if __name__ == "__main__":
