@@ -15,6 +15,13 @@
   <a href="https://github.com/Mrbotrx/Ayna_Ott-V2">
     <img src="https://img.shields.io/badge/⌂%20REPOSITORY-171717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Repository"/>
   </a>
+   <h1 align="center">BD BY KB PLAYLIST PRO</h1>
+
+<p align="center">
+  <a href="https://github.com/Mrbotrx/Ayna_Ott-V2/actions/workflows/update-playlist.yml">
+    <img src="https://github.com/Mrbotrx/Ayna_Ott-V2/actions/workflows/update-playlist.yml/badge.svg?event=public" alt="BD BY KB PLAYLIST PRO">
+  </a>
+</p>
 </p>---
 
 🏆 TOP PLAYLIST
