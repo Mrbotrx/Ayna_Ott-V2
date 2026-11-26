@@ -1,15 +1,4 @@
 #!/usr/bin/env python3
-"""
-Build Playlist/bdott.m3u from the OTT Plus live-tv API.
-
-- Reads result.sections[].items[] and uses content.title / content.url / content.tv_cover.
-- Follows result.sections_paginator.links.next until it is null.
-- Keeps only channels whose stream URL actually responds with a playable HLS manifest.
-- The API URL comes from the OTT_API_URL environment variable (GitHub Secret),
-  so it is never written in the public repository.
-- Logs only key names and counts, never stream URLs (Actions logs are public in public repos).
-"""
-
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -35,6 +24,14 @@ HEADER_LINES = [
     "# Telegram: https://t.me/iptvlinksm3u8",
 ]
 
+# Fixed entry written once at the top of the playlist (group "All").
+INTRO_ENTRY = {
+    "name": "Main owners Tv",
+    "logo": "https://raw.githubusercontent.com/Mrbotrx/Mrbotrx/refs/heads/main/IPTV_LINKS_LOGO.jpg",
+    "group": "All",
+    "url": "https://github.com/Mrbotrx/Mrbotrx/raw/refs/heads/main/IPTV_LINKS_VIDEO.mp4",
+}
+
 HTTP_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                   "(KHTML, like Gecko) Chrome/124.0 Safari/537.36",
@@ -44,7 +41,8 @@ HTTP_HEADERS = {
 PAGINATOR_KEYS = ("sections_paginator", "paginator", "pagination", "paging", "meta", "links", "page_info")
 NEXT_KEYS = ("next", "next_page", "nextPage", "next_url", "nextUrl")
 NAME_KEYS = ("title", "name", "channel_name", "display_name")
-LOGO_KEYS = ("tv_cover", "sm_image", "lg_image", "logo", "logo_url", "image", "thumbnail", "icon", "poster")
+LOGO_KEYS = ("thumbnail", "thumbnail_background", "tv_cover", "sm_image", "lg_image",
+             "logo", "logo_url", "image", "icon", "poster")
 GROUP_KEYS = ("category", "categories", "group", "group_title", "genre", "genres")
 STREAM_KEYS = ("url", "m3u8", "stream_url", "streamUrl", "hls", "link", "source", "sources",
                "stream", "streams", "file", "playback_url", "playbackUrl")
@@ -74,25 +72,6 @@ def pick_http(obj, keys):
     return ""
 
 
-def first_http_nested(obj, keys):
-    """First http(s) string under the given keys, searching nested dict/list values."""
-    if isinstance(obj, dict):
-        for key in keys:
-            if key in obj:
-                found = first_http_nested(obj[key], keys)
-                if found:
-                    return found
-        return ""
-    if isinstance(obj, str):
-        return obj.strip() if obj.strip().startswith("http") else ""
-    if isinstance(obj, list):
-        for item in obj:
-            found = first_http_nested(item, keys)
-            if found:
-                return found
-    return ""
-
-
 def get_group_name(obj):
     """Category/group name if the object has one, else empty string."""
     if not isinstance(obj, dict):
@@ -112,12 +91,22 @@ def get_group_name(obj):
     return ""
 
 
+def pick_logo(content, item):
+    """Channel logo: 'thumbnail' first, then 'thumbnail_background', then other image keys."""
+    for key in LOGO_KEYS:
+        for obj in (content, item):
+            url = pick_http(obj, (key,))
+            if url:
+                return url
+    return ""
+
+
 def normalize_item(item, section_title=""):
     """Flatten one API item (with nested content) into name, url, logo, group."""
     content = item.get("content") if isinstance(item.get("content"), dict) else {}
     name = (content.get("title") or item.get("title") or item.get("name") or "")
     url = pick_http(content, STREAM_KEYS) or pick_http(item, STREAM_KEYS)
-    logo = pick_http(content, LOGO_KEYS) or pick_http(item, LOGO_KEYS)
+    logo = pick_logo(content, item)
     group = get_group_name(content) or get_group_name(item) or section_title or "Others"
     return {
         "name": clean(name),
@@ -257,7 +246,7 @@ def build_entries(channels):
     seen_urls = set()
     entries = []
     for ch in channels:
-        if not ch["url"] or not ch["name"] or ch["url"] in seen_urls:
+        if not ch["url"] or not ch["name"] or ch["url"] in seen_urls or ch["url"] == INTRO_ENTRY["url"]:
             continue
         seen_urls.add(ch["url"])
         entries.append(ch)
@@ -280,9 +269,9 @@ def write_playlist(entries):
     lines = list(HEADER_LINES)
     lines.append(f"# Date: {now:%Y-%m-%d}")
     lines.append(f"# Time: {now:%H:%M} UTC")
-    lines.append(f"# Total Channels: {len(entries)}")
+    lines.append(f"# Total Channels: {len(entries) + 1}")
     lines.append("")
-    for e in entries:
+    for e in [INTRO_ENTRY] + entries:
         lines.append(
             f'#EXTINF:-1 tvg-id="" tvg-name="{e["name"]}" tvg-logo="{e["logo"]}" '
             f'group-title="{e["group"]}",{e["name"]}'
