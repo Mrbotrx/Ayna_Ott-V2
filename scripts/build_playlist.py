@@ -2,7 +2,8 @@
 """
 Build Playlist/bdott.m3u from the OTT Plus live-tv API.
 
-- Follows every "next" cursor until the API stops returning one.
+- Reads result.sections[].items[] and uses content.title / content.url / content.tv_cover.
+- Follows result.sections_paginator.links.next until it is null.
 - Keeps only channels whose stream URL actually responds with a playable HLS manifest.
 - The API URL comes from the OTT_API_URL environment variable (GitHub Secret),
   so it is never written in the public repository.
@@ -40,24 +41,94 @@ HTTP_HEADERS = {
     "Accept": "*/*",
 }
 
-LIST_KEYS = ("data", "items", "channels", "live_tvs", "liveTvs", "results", "list", "rows")
+PAGINATOR_KEYS = ("sections_paginator", "paginator", "pagination", "paging", "meta", "links", "page_info")
 NEXT_KEYS = ("next", "next_page", "nextPage", "next_url", "nextUrl")
-NAME_KEYS = ("name", "title", "channel_name", "channelName", "display_name")
-LOGO_KEYS = ("logo", "logo_url", "logoUrl", "image", "thumbnail", "icon", "poster")
+NAME_KEYS = ("title", "name", "channel_name", "display_name")
+LOGO_KEYS = ("tv_cover", "sm_image", "lg_image", "logo", "logo_url", "image", "thumbnail", "icon", "poster")
 GROUP_KEYS = ("category", "categories", "group", "group_title", "genre", "genres")
-STREAM_KEYS = ("m3u8", "stream_url", "streamUrl", "hls", "url", "link", "source", "sources",
+STREAM_KEYS = ("url", "m3u8", "stream_url", "streamUrl", "hls", "link", "source", "sources",
                "stream", "streams", "file", "playback_url", "playbackUrl")
+LIST_KEYS = ("data", "items", "channels", "live_tvs", "liveTvs", "results", "list", "rows")
 
 
 # ----------------------------------------------------------------------------
-# Helpers for unknown JSON shapes
+# Helpers
 # ----------------------------------------------------------------------------
 def log(msg):
     print(msg, flush=True)
 
 
+def clean(text):
+    """Keep M3U attribute/title values on one line and free of quotes."""
+    return str(text).replace('"', "'").replace("\n", " ").replace("\r", " ").strip()
+
+
+def pick_http(obj, keys):
+    """First top-level http(s) string under the given keys."""
+    if not isinstance(obj, dict):
+        return ""
+    for key in keys:
+        value = obj.get(key)
+        if isinstance(value, str) and value.strip().startswith("http"):
+            return value.strip()
+    return ""
+
+
+def first_http_nested(obj, keys):
+    """First http(s) string under the given keys, searching nested dict/list values."""
+    if isinstance(obj, dict):
+        for key in keys:
+            if key in obj:
+                found = first_http_nested(obj[key], keys)
+                if found:
+                    return found
+        return ""
+    if isinstance(obj, str):
+        return obj.strip() if obj.strip().startswith("http") else ""
+    if isinstance(obj, list):
+        for item in obj:
+            found = first_http_nested(item, keys)
+            if found:
+                return found
+    return ""
+
+
+def get_group_name(obj):
+    """Category/group name if the object has one, else empty string."""
+    if not isinstance(obj, dict):
+        return ""
+    for key in GROUP_KEYS:
+        value = obj.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+        if isinstance(value, dict) and isinstance(value.get("name"), str):
+            return value["name"].strip()
+        if isinstance(value, list) and value:
+            first = value[0]
+            if isinstance(first, str) and first.strip():
+                return first.strip()
+            if isinstance(first, dict) and isinstance(first.get("name"), str):
+                return first["name"].strip()
+    return ""
+
+
+def normalize_item(item, section_title=""):
+    """Flatten one API item (with nested content) into name, url, logo, group."""
+    content = item.get("content") if isinstance(item.get("content"), dict) else {}
+    name = (content.get("title") or item.get("title") or item.get("name") or "")
+    url = pick_http(content, STREAM_KEYS) or pick_http(item, STREAM_KEYS)
+    logo = pick_http(content, LOGO_KEYS) or pick_http(item, LOGO_KEYS)
+    group = get_group_name(content) or get_group_name(item) or section_title or "Others"
+    return {
+        "name": clean(name),
+        "url": url,
+        "logo": clean(logo),
+        "group": clean(group),
+    }
+
+
 def extract_items(payload):
-    """Return the list of channel dicts from one API page."""
+    """Fallback for pages that are not in the sections format."""
     if isinstance(payload, list):
         return [x for x in payload if isinstance(x, dict)]
     if not isinstance(payload, dict):
@@ -70,23 +141,44 @@ def extract_items(payload):
             found = extract_items(value)
             if found:
                 return found
-    # Fallback: the longest list of dicts at top level
-    best = []
-    for value in payload.values():
-        if isinstance(value, list) and value and isinstance(value[0], dict):
-            if len(value) > len(best):
-                best = value
-    return best
+    return []
+
+
+def flatten_channels(payload):
+    """Return normalized channels from one API page, going through result.sections[].items[]."""
+    root = payload.get("result") if isinstance(payload, dict) and isinstance(payload.get("result"), dict) else payload
+    sections = root.get("sections") if isinstance(root, dict) else None
+    channels = []
+    if isinstance(sections, list):
+        for sec in sections:
+            if not isinstance(sec, dict):
+                continue
+            title = str(sec.get("title") or "")
+            for item in sec.get("items") or []:
+                if isinstance(item, dict):
+                    channels.append(normalize_item(item, title))
+        return channels
+    return [normalize_item(item) for item in extract_items(payload)]
 
 
 def find_next(payload):
     """Return the next-page URL/cursor if the API gives one, else None."""
-    if not isinstance(payload, dict):
-        return None
-    candidates = [payload]
-    for container in ("meta", "links", "pagination", "paging", "page_info"):
-        if isinstance(payload.get(container), dict):
-            candidates.append(payload[container])
+    roots = [payload]
+    if isinstance(payload, dict) and isinstance(payload.get("result"), dict):
+        roots.append(payload["result"])
+
+    candidates = []
+    for root in roots:
+        if not isinstance(root, dict):
+            continue
+        candidates.append(root)
+        for container in PAGINATOR_KEYS:
+            value = root.get(container)
+            if isinstance(value, dict):
+                candidates.append(value)
+                if isinstance(value.get("links"), dict):
+                    candidates.append(value["links"])
+
     for obj in candidates:
         for key in NEXT_KEYS:
             value = obj.get(key)
@@ -95,77 +187,6 @@ def find_next(payload):
             if isinstance(value, str) and value.strip():
                 return value.strip()
     return None
-
-
-def first_string(obj, keys, prefer_substring=None):
-    """Find the first usable http(s) string, searching nested dict/list values."""
-    if isinstance(obj, dict):
-        search_keys = keys if keys is not None else list(obj.keys())
-        for key in search_keys:
-            if key in obj:
-                found = first_string(obj[key], keys=None, prefer_substring=prefer_substring)
-                if found:
-                    return found
-        return ""
-    if isinstance(obj, str):
-        s = obj.strip()
-        if s.startswith("http") and (prefer_substring is None or prefer_substring in s):
-            return s
-        return ""
-    if isinstance(obj, list):
-        for item in obj:
-            found = first_string(item, keys=None, prefer_substring=prefer_substring)
-            if found:
-                return found
-    return ""
-
-
-def get_stream(ch):
-    url = first_string(ch, STREAM_KEYS, prefer_substring=".m3u8")
-    if not url:
-        url = first_string(ch, STREAM_KEYS)
-    return url
-
-
-def get_name(ch):
-    for key in NAME_KEYS:
-        value = ch.get(key)
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-    return ""
-
-
-def get_logo(ch):
-    for key in LOGO_KEYS:
-        value = ch.get(key)
-        if isinstance(value, str) and value.startswith("http"):
-            return value.strip()
-        if isinstance(value, dict):
-            found = first_string(value, keys=None)
-            if found:
-                return found
-    return ""
-
-
-def get_group(ch):
-    for key in GROUP_KEYS:
-        value = ch.get(key)
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-        if isinstance(value, dict) and isinstance(value.get("name"), str):
-            return value["name"].strip()
-        if isinstance(value, list) and value:
-            first = value[0]
-            if isinstance(first, str):
-                return first.strip()
-            if isinstance(first, dict) and isinstance(first.get("name"), str):
-                return first["name"].strip()
-    return "Others"
-
-
-def clean(text):
-    """Keep M3U attribute/title values on one line and free of quotes."""
-    return str(text).replace('"', "'").replace("\n", " ").replace("\r", " ").strip()
 
 
 # ----------------------------------------------------------------------------
@@ -182,18 +203,36 @@ def fetch_all_channels(session):
         resp = session.get(url, timeout=20)
         resp.raise_for_status()
         payload = resp.json()
-        items = extract_items(payload)
+
+        page_channels = flatten_channels(payload)
+
         if page_no == 1:
             log(f"First page top-level keys: {sorted(payload.keys()) if isinstance(payload, dict) else 'list'}")
-            if items:
-                log(f"First channel keys: {sorted(items[0].keys())}")
-        log(f"Page {page_no}: {len(items)} channels")
-        channels.extend(items)
+            root = payload.get("result") if isinstance(payload, dict) else None
+            if isinstance(root, dict):
+                log(f"'result' keys: {sorted(root.keys())}")
+                sections = root.get("sections")
+                if isinstance(sections, list):
+                    titles = [str(s.get("title", "")) for s in sections if isinstance(s, dict)]
+                    log(f"Section titles: {titles}")
+                    for sec in sections:
+                        items = sec.get("items") if isinstance(sec, dict) else None
+                        if items and isinstance(items[0], dict):
+                            content = items[0].get("content")
+                            log(f"First item keys: {sorted(items[0].keys())}")
+                            if isinstance(content, dict):
+                                log(f"First content keys: {sorted(content.keys())}")
+                            break
+
+        log(f"Page {page_no}: {len(page_channels)} items")
+        channels.extend(page_channels)
+
         next_value = find_next(payload)
         if not next_value:
             break
         url = urljoin(url, next_value)
-    log(f"Pages scanned: {len(visited)}, raw channels: {len(channels)}")
+
+    log(f"Pages scanned: {len(visited)}, raw items: {len(channels)}")
     return channels
 
 
@@ -214,21 +253,14 @@ def is_working(session, url):
 
 
 def build_entries(channels):
-    """Turn raw API items into unique, named entries with a stream URL."""
+    """Keep unique items that have a name and a stream URL."""
     seen_urls = set()
     entries = []
     for ch in channels:
-        url = get_stream(ch)
-        name = get_name(ch)
-        if not url or not name or url in seen_urls:
+        if not ch["url"] or not ch["name"] or ch["url"] in seen_urls:
             continue
-        seen_urls.add(url)
-        entries.append({
-            "name": clean(name),
-            "logo": clean(get_logo(ch)),
-            "group": clean(get_group(ch)),
-            "url": url,
-        })
+        seen_urls.add(ch["url"])
+        entries.append(ch)
     return entries
 
 
