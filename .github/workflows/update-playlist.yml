@@ -1,4 +1,4 @@
-name: playlist BEST IN BD
+name: BD BY KB PLAYLIST PRO
 
 on:
   schedule:
@@ -40,9 +40,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add Playlist/bdott.m3u
-          if git diff --cached --quiet; then
-            echo "No playlist changes."
-          else
-            git commit -m "Update bdott playlist $(date -u +'%Y-%m-%d %H:%M UTC')"
-            git push
-          fifi
+          git diff --cached --quiet && echo "No playlist changes." && exit 0
+          git commit -m "Update bdott playlist $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
