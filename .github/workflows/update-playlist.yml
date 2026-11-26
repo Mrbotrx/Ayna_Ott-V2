@@ -1,0 +1,48 @@
+name: Update bdott playlist
+
+on:
+  schedule:
+    # GitHub cron cannot run every 1h22m. This runs at minute 22 of every hour.
+    - cron: "22 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bdott-playlist
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build playlist
+        env:
+          OTT_API_URL: ${{ secrets.OTT_API_URL }}
+        run: python scripts/build_playlist.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Playlist/bdott.m3u
+          if git diff --cached --quiet; then
+            echo "No playlist changes."
+          else
+            git commit -m "Update bdott playlist $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+          fi
