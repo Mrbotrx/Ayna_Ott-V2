@@ -1,4 +1,4 @@
-name: Update bdott playlist
+name: playlist BEST IN BD
 
 on:
   schedule:
@@ -45,4 +45,4 @@ jobs:
           else
             git commit -m "Update bdott playlist $(date -u +'%Y-%m-%d %H:%M UTC')"
             git push
-          fi
+          fifi
