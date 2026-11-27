@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
 
   schedule:
-    # Every hour at minute 32 (UTC)
     - cron: "32 * * * *"
 
 permissions:
@@ -18,6 +17,7 @@ jobs:
       MOVIE_OTT_BD_ZIP_PASS: ${{ secrets.MOVIE_OTT_BD_ZIP_PASS }}
 
     steps:
+
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -31,7 +31,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyzipper==0.3.6
 
-      - name: Extract and Check Project Files
+      - name: Check Password Secret
+        run: |
+          if [ -z "$MOVIE_OTT_BD_ZIP_PASS" ]; then
+            echo "ERROR: ZIP password secret missing!"
+            exit 1
+          fi
+          echo "Password secret detected."
+
+      - name: Extract Project Files
         run: |
           python - <<'PY'
           import os
@@ -43,21 +51,22 @@ jobs:
           requirements = root / "requirements.txt"
 
           if not script.exists():
+
               archives = list(root.glob("**/Movie_ott_Bd.zip"))
 
               if not archives:
                   raise FileNotFoundError(
-                      "Movie_ott_Bd.py and Movie_ott_Bd.zip not found!"
+                      "Movie_ott_Bd.py or Movie_ott_Bd.zip missing!"
                   )
 
-              password = os.environ.get("MOVIE_OTT_BD_ZIP_PASS", "")
+              password = os.environ[
+                  "MOVIE_OTT_BD_ZIP_PASS"
+              ].encode("utf-8")
 
-              if not password:
-                  raise ValueError("ZIP password secret is missing!")
+              with pyzipper.AESZipFile(archives[0]) as zf:
 
-              with pyzipper.AESZipFile(archives[0]) as archive:
                   matches = [
-                      name for name in archive.namelist()
+                      name for name in zf.namelist()
                       if Path(name).name == "Movie_ott_Bd.py"
                   ]
 
@@ -67,44 +76,79 @@ jobs:
                       )
 
                   script.write_bytes(
-                      archive.read(matches[0], pwd=password.encode())
+                      zf.read(matches[0], pwd=password)
                   )
 
           if not requirements.exists():
-              candidates = list(root.glob("**/requirements.txt"))
+              candidates = [
+                  p for p in root.glob("**/requirements.txt")
+                  if ".git" not in p.parts
+              ]
 
-              if candidates:
-                  requirements.write_bytes(candidates[0].read_bytes())
-              else:
-                  raise FileNotFoundError("requirements.txt not found!")
+              if not candidates:
+                  raise FileNotFoundError("requirements.txt missing!")
 
-          print("SUCCESS: Project files found.")
-          print("Python:", script)
-          print("Requirements:", requirements)
+              requirements.write_bytes(
+                  candidates[0].read_bytes()
+              )
+
+          print("Project files ready!")
           PY
 
       - name: Install Requirements
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: Check ZIP Password Secret
-        run: |
-          if [ -z "$MOVIE_OTT_BD_ZIP_PASS" ]; then
-            echo "ERROR: MOVIE_OTT_BD_ZIP_PASS secret is missing."
-            exit 1
-          fi
-          echo "ZIP password secret detected."
+          pip install pyzipper==0.3.6
 
       - name: Run Movie OTT BD
         run: |
           python -u Movie_ott_Bd.py
 
-      - name: Verify Output Files
+      - name: Verify Playlist
         run: |
           test -s output/Movie_ott_Bd.m3u8
-          test -s Movie_ott_Bd.zip
-          echo "Playlist and encrypted ZIP found."
+          echo "Playlist generated successfully!"
+
+      - name: Rebuild Encrypted ZIP
+        run: |
+          python - <<'PY'
+          import os
+          import pyzipper
+          from pathlib import Path
+
+          password = os.environ[
+              "MOVIE_OTT_BD_ZIP_PASS"
+          ].encode("utf-8")
+
+          files = [
+              Path("Movie_ott_Bd.py"),
+              Path("requirements.txt"),
+              Path("output/Movie_ott_Bd.m3u8")
+          ]
+
+          for file in files:
+              if not file.is_file():
+                  raise FileNotFoundError(str(file))
+
+          with pyzipper.AESZipFile(
+              "Movie_ott_Bd.zip",
+              "w",
+              compression=pyzipper.ZIP_DEFLATED,
+              encryption=pyzipper.WZ_AES
+          ) as zf:
+
+              zf.setpassword(password)
+              zf.setencryption(
+                  pyzipper.WZ_AES,
+                  nbits=256
+              )
+
+              for file in files:
+                  zf.write(file, arcname=str(file))
+
+          print("AES-256 ZIP created!")
+          PY
 
       - name: Verify Encrypted ZIP
         run: |
@@ -112,18 +156,19 @@ jobs:
           import os
           import pyzipper
 
-          password = os.environ["MOVIE_OTT_BD_ZIP_PASS"].encode()
+          password = os.environ[
+              "MOVIE_OTT_BD_ZIP_PASS"
+          ].encode("utf-8")
 
-          with pyzipper.AESZipFile("Movie_ott_Bd.zip") as archive:
-              files = archive.namelist()
+          with pyzipper.AESZipFile(
+              "Movie_ott_Bd.zip",
+              "r"
+          ) as zf:
 
-              if not files:
-                  raise Exception("ZIP archive is empty!")
+              for name in zf.namelist():
+                  zf.read(name, pwd=password)
 
-              for name in files:
-                  archive.read(name, pwd=password)
-
-          print("SUCCESS: Encrypted ZIP verified.")
+          print("SUCCESS: ZIP password verified!")
           PY
 
       - name: Commit and Push
