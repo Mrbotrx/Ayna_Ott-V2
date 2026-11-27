@@ -21,25 +21,25 @@
 #
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-#MOVIE-INFO: Latest Movies | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: English Movies | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: Hindi Movies | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: Anime | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: Popular Movies | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: Top Movies | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: Trending Movies | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: Featured Movies | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: Bangla Drama | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: Latest | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: Continue Watching | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: Recommended | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: For You | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: PPV | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: Sara Bangla News | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: Favorites | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: Movies | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: 90s Highest-Grossing Movies | Category: Movies | Status: Not available as free stream
-#MOVIE-INFO: Sports Record | Category: Movies | Status: Not available as free stream
+#MOVIE-INFO: Latest Movies | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: English Movies | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: Hindi Movies | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: Anime | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: Popular Movies | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: Top Movies | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: Trending Movies | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: Featured Movies | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: Bangla Drama | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: Latest | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: Continue Watching | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: Recommended | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: For You | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: PPV | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: Sara Bangla News | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: Favorites | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: Movies | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: 90s Highest-Grossing Movies | Category: Movies | Status: Not free (access: unknown)
+#MOVIE-INFO: Sports Record | Category: Movies | Status: Not free (access: unknown)
 #EXTINF:-1 tvg-name="KALLYAN TV" tvg-logo="https://raw.githubusercontent.com/Mrbotrx/Mrbotrx/refs/heads/main/IPTV_LINKS_LOGO.jpg" group-title="KBTV",KALLYAN TV
 https://github.com/Mrbotrx/Mrbotrx/raw/refs/heads/main/IPTV_LINKS_VIDEO.mp4
 
