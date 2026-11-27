@@ -18,44 +18,111 @@ jobs:
 
     steps:
 
+      # 1. CHECKOUT
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # 2. PYTHON
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Check Project Files
+      # 3. FIND PROJECT FILES
+      - name: Find and Prepare Project Files
         run: |
-          test -f Movie_ott_Bd.py
-          test -f requirements.txt
-          echo "Project files found."
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
 
+          root = Path.cwd()
+
+          print("Searching repository...")
+
+          for p in root.iterdir():
+              print("ROOT:", p.name)
+
+          # Find Python script
+          scripts = [
+              p for p in root.rglob("Movie_ott_Bd.py")
+              if ".git" not in p.parts
+          ]
+
+          if not scripts:
+              raise FileNotFoundError(
+                  "Movie_ott_Bd.py NOT FOUND! "
+                  "Upload the Python source file to GitHub."
+              )
+
+          source = scripts[0]
+          target = root / "Movie_ott_Bd.py"
+
+          if source.resolve() != target.resolve():
+              shutil.copy2(source, target)
+
+          print("Python script ready:", target)
+
+          # Find requirements
+          requirements = root / "requirements.txt"
+
+          if not requirements.exists():
+
+              candidates = [
+                  p for p in root.rglob("requirements.txt")
+                  if ".git" not in p.parts
+              ]
+
+              if candidates:
+                  shutil.copy2(candidates[0], requirements)
+
+              else:
+                  requirements.write_text(
+                      "requests==2.32.5\n"
+                      "pyzipper==0.3.6\n"
+                      "beautifulsoup4==4.14.2\n",
+                      encoding="utf-8"
+                  )
+
+          print("Requirements ready.")
+
+          assert target.is_file()
+          assert requirements.is_file()
+
+          print("SUCCESS: Project files found!")
+          PY
+
+      # 4. INSTALL
       - name: Install Requirements
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # 5. PASSWORD
       - name: Check ZIP Password
         run: |
           if [ -z "$MOVIE_OTT_BD_ZIP_PASS" ]; then
-            echo "ERROR: ZIP password secret missing!"
+            echo "ERROR: MOVIE_OTT_BD_ZIP_PASS missing!"
             exit 1
           fi
+
           echo "ZIP password detected."
 
+      # 6. RUN SCRIPT
       - name: Run Movie OTT BD
         run: |
           python -u Movie_ott_Bd.py
 
-      - name: Verify Output
+      # 7. CHECK OUTPUT
+      - name: Verify Playlist and ZIP
         run: |
           test -s output/Movie_ott_Bd.m3u8
           test -s Movie_ott_Bd.zip
-          echo "Playlist and ZIP generated."
 
-      - name: Verify AES ZIP
+          echo "Playlist generated."
+          echo "ZIP generated."
+
+      # 8. VERIFY ENCRYPTION
+      - name: Verify AES-256 ZIP
         run: |
           python - <<'PY'
           import os
@@ -67,14 +134,18 @@ jobs:
 
           with pyzipper.AESZipFile(
               "Movie_ott_Bd.zip", "r"
-          ) as zf:
+          ) as archive:
 
-              for name in zf.namelist():
-                  zf.read(name, pwd=password)
+              if not archive.namelist():
+                  raise RuntimeError("ZIP is empty!")
 
-          print("AES-256 ZIP verified!")
+              for name in archive.namelist():
+                  archive.read(name, pwd=password)
+
+          print("SUCCESS: AES ZIP verified!")
           PY
 
+      # 9. COMMIT
       - name: Commit and Push
         run: |
           git config user.name "github-actions[bot]"
