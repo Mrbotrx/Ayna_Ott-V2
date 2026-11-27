@@ -1,0 +1,63 @@
+name: Movie_ott_Bd Auto Update
+
+on:
+
+  workflow_dispatch:
+
+  schedule:
+    - cron: "32 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: Movie_ott_Bd
+  cancel-in-progress: false
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Movie Generator
+        env:
+          ZIP_PASSWORD: ${{ secrets.ZIP_PASSWORD }}
+        run: |
+          python Movie_ott_Bd.py
+
+      - name: Check Output
+        run: |
+          test -s output/Movie_ott_Bd.m3u8
+          test -s Movie_ott_Bd.zip
+          echo "Playlist and encrypted ZIP generated successfully"
+
+      - name: Commit Changes
+        run: |
+
+          git config user.name "github-actions[bot]"
+
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add output/Movie_ott_Bd.m3u8 Movie_ott_Bd.zip
+
+          git diff --cached --quiet || git commit -m "Auto Update Movie OTT BD"
+
+          git push
