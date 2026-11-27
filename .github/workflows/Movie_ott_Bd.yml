@@ -23,7 +23,7 @@ jobs:
   build:
     name: Build Movie OTT BD
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
 
     steps:
 
@@ -34,6 +34,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
 
       - name: Install Dependencies
         run: |
@@ -42,13 +43,8 @@ jobs:
 
       - name: Check Repository
         run: |
-          echo "Searching repository..."
           ls -la
-
-          test -f Movie_ott_Bd.zip || {
-            echo "ERROR: ZIP FILE NOT FOUND"
-            exit 1
-          }
+          test -s Movie_ott_Bd.zip
 
       - name: Extract Python Source
         env:
@@ -65,19 +61,12 @@ jobs:
           password = os.environ.get("ZIP_PASSWORD", "")
 
           if not password:
-              raise RuntimeError("ZIP PASSWORD SECRET IS EMPTY!")
-
-          print("Opening encrypted ZIP...")
+              raise RuntimeError("ZIP PASSWORD SECRET EMPTY!")
 
           with pyzipper.AESZipFile(archive, "r") as z:
 
-              files = z.namelist()
-
-              for name in files:
-                  print("FOUND:", name)
-
               matches = [
-                  name for name in files
+                  name for name in z.namelist()
                   if Path(name).name.lower() == output.lower()
               ]
 
@@ -86,31 +75,26 @@ jobs:
                       "Movie_ott_Bd.py missing or duplicated!"
                   )
 
-              try:
-                  data = z.read(
-                      matches[0],
-                      pwd=password.encode("utf-8")
-                  )
-
-              except Exception as error:
-                  raise RuntimeError(
-                      "ZIP PASSWORD OR ENCRYPTION ERROR!"
-                  ) from error
+              data = z.read(
+                  matches[0],
+                  pwd=password.encode("utf-8")
+              )
 
           if not data:
-              raise RuntimeError("Extracted source is empty!")
+              raise RuntimeError("Empty Python source!")
 
           Path(output).write_bytes(data)
 
-          print("SOURCE EXTRACTION SUCCESSFUL!")
+          print("ZIP EXTRACTION SUCCESSFUL!")
           PY
 
       - name: Validate Python Source
         run: |
           python -m py_compile Movie_ott_Bd.py
-          echo "Python validation successful!"
 
       - name: Run Movie Generator
+        env:
+          PYTHONUNBUFFERED: "1"
         run: |
           python -u Movie_ott_Bd.py
 
@@ -121,7 +105,7 @@ jobs:
 
           grep -q "^#EXTM3U" Playlist/Movie_ott_Bd.m3u8
 
-          echo "Playlist validation successful!"
+          echo "PLAYLIST VALIDATED!"
 
           ls -lh Playlist/
 
@@ -143,12 +127,11 @@ jobs:
         if: always()
         run: |
           rm -f Movie_ott_Bd.py
-          echo "Temporary source removed."
 
       - name: Final Summary
         if: always()
         run: |
           echo "## MOVIE OTT BD" >> "$GITHUB_STEP_SUMMARY"
           echo "Status: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "Schedule: 32 * * * *" >> "$GITHUB_STEP_SUMMARY"
-          echo "Python: 3.12" >> "$GITHUB_STEP_SUMMARY"
+          echo "Workers: 20" >> "$GITHUB_STEP_SUMMARY"
+          echo "Schedule: Every hour" >> "$GITHUB_STEP_SUMMARY"
