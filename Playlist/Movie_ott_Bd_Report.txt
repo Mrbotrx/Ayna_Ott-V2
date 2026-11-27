@@ -1,0 +1,31 @@
+MOVIE OTT BD - UPDATE REPORT
+========================================
+Generated            : 2026-11-27 22:43:18 (Asia/Dhaka)
+Playlist file        : Movie_ott_Bd.m3u8
+
+Total movies fetched : 19
+Playable movies      : 0
+Metadata-only movies : 19
+Channels in playlist : 1 (includes KALLYAN TV)
+
+Reasons for metadata-only entries:
+  - Not available as free stream: 19
+      * Latest Movies
+      * English Movies
+      * Hindi Movies
+      * Anime
+      * Popular Movies
+      * Top Movies
+      * Trending Movies
+      * Featured Movies
+      * Bangla Drama
+      * Latest
+      * Continue Watching
+      * Recommended
+      * For You
+      * PPV
+      * Sara Bangla News
+      * Favorites
+      * Movies
+      * 90s Highest-Grossing Movies
+      * Sports Record
