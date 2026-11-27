@@ -1,157 +1,155 @@
 name: MOVIE OTT BD AUTO UPDATE
 
 "on":
-workflow_dispatch:
-
-schedule:
-- cron: "32 * * * *"
-
-push:
-paths:
-- "Movie_ott_Bd.zip"
-- "requirements.txt"
-- ".github/workflows/Movie_ott_Bd.yml"
+  workflow_dispatch:
+  schedule:
+    - cron: "32 * * * *"
+  push:
+    paths:
+      - "Movie_ott_Bd.zip"
+      - "requirements.txt"
+      - ".github/workflows/Movie_ott_Bd.yml"
 
 permissions:
-contents: write
+  contents: write
 
 concurrency:
-group: movie-ott-bd
-cancel-in-progress: false
+  group: movie-ott-bd
+  cancel-in-progress: false
 
 jobs:
-build:
-name: Build Movie OTT BD
-runs-on: ubuntu-latest
-timeout-minutes: 60
+  build:
+    name: Build Movie OTT BD
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
 
-steps:
-  - name: Checkout Repository
-    uses: actions/checkout@v4
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-  - name: Setup Python
-    uses: actions/setup-python@v5
-    with:
-      python-version: "3.12"
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-  - name: Install Dependencies
-    run: |
-      python -m pip install --upgrade pip
-      pip install -r requirements.txt
-      pip install pyzipper
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyzipper
 
-  - name: Check Repository
-    run: |
-      echo "Searching repository..."
-      ls -la
+      - name: Check Repository
+        run: |
+          echo "Searching repository..."
+          ls -la
 
-      test -f Movie_ott_Bd.zip || {
-        echo "ERROR: ZIP FILE NOT FOUND"
-        exit 1
-      }
+          test -f Movie_ott_Bd.zip || {
+            echo "ERROR: ZIP FILE NOT FOUND"
+            exit 1
+          }
 
-  - name: Extract Python Source
-    env:
-      ZIP_PASSWORD: ${{ secrets.MOVIE_OTT_BD_ZIP_PASS }}
-    run: |
-      python - <<'PY'
-      import os
-      import pyzipper
+      - name: Extract Python Source
+        env:
+          ZIP_PASSWORD: ${{ secrets.MOVIE_OTT_BD_ZIP_PASS }}
+        run: |
+          python - <<'PY'
+          import os
+          import pyzipper
 
-      archive = "Movie_ott_Bd.zip"
-      output = "Movie_ott_Bd.py"
-      password = os.environ.get("ZIP_PASSWORD", "")
+          archive = "Movie_ott_Bd.zip"
+          output = "Movie_ott_Bd.py"
+          password = os.environ.get("ZIP_PASSWORD", "")
 
-      if not password:
-          raise RuntimeError("ZIP PASSWORD SECRET IS EMPTY!")
+          if not password:
+              raise RuntimeError("ZIP PASSWORD SECRET IS EMPTY!")
 
-      print("Opening encrypted ZIP...")
+          print("Opening encrypted ZIP...")
 
-      with pyzipper.AESZipFile(archive, "r") as z:
-          files = z.namelist()
+          with pyzipper.AESZipFile(archive, "r") as z:
+              files = z.namelist()
 
-          for name in files:
-              print("FOUND:", name)
+              for name in files:
+                  print("FOUND:", name)
 
-          matches = [
-              name for name in files
-              if os.path.basename(name).lower() == output.lower()
-          ]
+              matches = [
+                  name for name in files
+                  if os.path.basename(name).lower() == output.lower()
+              ]
 
-          if len(matches) != 1:
-              raise FileNotFoundError(
-                  "Movie_ott_Bd.py missing or duplicated in ZIP!"
-              )
+              if len(matches) != 1:
+                  raise FileNotFoundError(
+                      "Movie_ott_Bd.py missing or duplicated in ZIP!"
+                  )
 
-          try:
-              data = z.read(
-                  matches[0],
-                  pwd=password.encode("utf-8")
-              )
-          except Exception as error:
-              raise RuntimeError(
-                  "ZIP PASSWORD OR ENCRYPTION ERROR!"
-              ) from error
+              try:
+                  data = z.read(
+                      matches[0],
+                      pwd=password.encode("utf-8")
+                  )
+              except Exception as error:
+                  raise RuntimeError(
+                      "ZIP PASSWORD OR ENCRYPTION ERROR!"
+                  ) from error
 
-      if not data:
-          raise RuntimeError("Extracted source is empty!")
+          if not data:
+              raise RuntimeError("Extracted source is empty!")
 
-      with open(output, "wb") as file:
-          file.write(data)
+          with open(output, "wb") as file:
+              file.write(data)
 
-      print("SOURCE EXTRACTION SUCCESSFUL!")
-      PY
+          print("SOURCE EXTRACTION SUCCESSFUL!")
+          PY
 
-  - name: Validate Python Source
-    run: |
-      python -m py_compile Movie_ott_Bd.py
-      echo "Python validation successful!"
+      - name: Validate Python Source
+        run: |
+          python -m py_compile Movie_ott_Bd.py
+          echo "Python validation successful!"
 
-  - name: Run Movie OTT BD
-    run: |
-      python -u Movie_ott_Bd.py
+      - name: Run Movie OTT BD
+        run: |
+          python -u Movie_ott_Bd.py
 
-  - name: Validate Output
-    run: |
-      if [ ! -d Playlist ]; then
-        echo "ERROR: Playlist directory missing!"
-        exit 1
-      fi
+      - name: Validate Output
+        run: |
+          if [ ! -d Playlist ]; then
+            echo "ERROR: Playlist directory missing!"
+            exit 1
+          fi
 
-      FILES=$(find Playlist -type f)
+          FILES=$(find Playlist -type f)
 
-      if [ -z "$FILES" ]; then
-        echo "ERROR: No playlist generated!"
-        exit 1
-      fi
+          if [ -z "$FILES" ]; then
+            echo "ERROR: No playlist generated!"
+            exit 1
+          fi
 
-      echo "$FILES"
-      echo "Playlist generated successfully!"
+          echo "$FILES"
+          echo "Playlist generated successfully!"
 
-  - name: Commit Playlist
-    run: |
-      git config user.name "github-actions[bot]"
-      git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Commit Playlist
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      git add Playlist/
+          git add Playlist/
 
-      if git diff --cached --quiet; then
-        echo "No changes detected."
-      else
-        git commit -m "Auto Update Movie OTT BD"
-        git push
-      fi
+          if git diff --cached --quiet; then
+            echo "No changes detected."
+          else
+            git commit -m "Auto Update Movie OTT BD"
+            git push
+          fi
 
-  - name: Cleanup
-    if: always()
-    run: |
-      rm -f Movie_ott_Bd.py
-      echo "Temporary source removed."
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f Movie_ott_Bd.py
+          echo "Temporary source removed."
 
-  - name: Final Summary
-    if: always()
-    run: |
-      echo "## MOVIE OTT BD" >> "$GITHUB_STEP_SUMMARY"
-      echo "Status: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
-      echo "Schedule: 32 * * * *" >> "$GITHUB_STEP_SUMMARY"
-      echo "Python: 3.12" >> "$GITHUB_STEP_SUMMARY"
+      - name: Final Summary
+        if: always()
+        run: |
+          echo "## MOVIE OTT BD" >> "$GITHUB_STEP_SUMMARY"
+          echo "Status: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Schedule: 32 * * * *" >> "$GITHUB_STEP_SUMMARY"
+          echo "Python: 3.12" >> "$GITHUB_STEP_SUMMARY"
