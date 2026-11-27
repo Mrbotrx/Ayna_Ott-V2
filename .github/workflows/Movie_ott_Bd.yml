@@ -106,6 +106,8 @@ jobs:
           echo "Python validation successful!"
 
       - name: Run Movie OTT BD
+        env:
+          MOVIE_OTT_BD_ZIP_PASS: ${{ secrets.MOVIE_OTT_BD_ZIP_PASS }}
         run: |
           python -u Movie_ott_Bd.py
 
