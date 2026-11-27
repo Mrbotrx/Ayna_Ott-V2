@@ -1,6 +1,6 @@
 MOVIE OTT BD - UPDATE REPORT
 ========================================
-Generated            : 2026-11-27 22:48:26 (Asia/Dhaka)
+Generated            : 2026-11-27 23:39:10 (Asia/Dhaka)
 Playlist file        : Movie_ott_Bd.m3u8
 
 Total movies fetched : 19
