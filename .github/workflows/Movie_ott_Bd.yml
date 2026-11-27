@@ -19,15 +19,9 @@ jobs:
     timeout-minutes: 30
 
     steps:
+
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Debug Repository Files
-        run: |
-          echo "Current Directory:"
-          pwd
-          echo "Repository Files:"
-          find . -maxdepth 4 -type f
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -39,28 +33,57 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Find Main Script
+      - name: Extract Main Script From ZIP
+        env:
+          ZIP_PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
-          if [ -f "Movie_ott_Bd.py" ]; then
-            echo "SCRIPT=Movie_ott_Bd.py" >> $GITHUB_ENV
-          elif [ -f "scripts/Movie_ott_Bd.py" ]; then
-            echo "SCRIPT=scripts/Movie_ott_Bd.py" >> $GITHUB_ENV
-          else
-            echo "ERROR: Movie_ott_Bd.py not found!"
-            exit 1
-          fi
+          python - <<'PY'
+          import os
+          import pyzipper
+
+          archive = "Movie_ott_Bd.zip"
+          password = os.environ.get("ZIP_PASSWORD")
+
+          if not os.path.isfile(archive):
+              raise SystemExit("ERROR: Movie_ott_Bd.zip not found!")
+
+          if not password:
+              raise SystemExit("ERROR: ZIP_PASSWORD secret missing!")
+
+          with pyzipper.AESZipFile(archive, "r") as z:
+              z.setpassword(password.encode("utf-8"))
+
+              names = z.namelist()
+              print("ZIP FILES:", names)
+
+              matches = [
+                  name for name in names
+                  if os.path.basename(name) == "Movie_ott_Bd.py"
+              ]
+
+              if not matches:
+                  raise SystemExit(
+                      "ERROR: Movie_ott_Bd.py not found inside ZIP!"
+                  )
+
+              with z.open(matches[0]) as source:
+                  with open("Movie_ott_Bd.py", "wb") as target:
+                      target.write(source.read())
+
+          print("Main script extracted successfully!")
+          PY
 
       - name: Run Movie Generator
         env:
           ZIP_PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
-          python "$SCRIPT"
+          python Movie_ott_Bd.py
 
       - name: Verify Output
         run: |
           test -s output/Movie_ott_Bd.m3u8
           test -s Movie_ott_Bd.zip
-          echo "Playlist generated successfully!"
+          echo "Playlist and ZIP successfully generated!"
 
       - name: Commit Changes
         run: |
