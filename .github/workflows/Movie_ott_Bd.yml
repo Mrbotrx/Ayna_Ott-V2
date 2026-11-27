@@ -1,161 +1,174 @@
-name: Movie OTT BD Auto Update
+name: MOVIE OTT BD - ADVANCED AUTO UPDATE
 
 on:
-  workflow_dispatch:
+workflow_dispatch:
 
-  schedule:
-    - cron: "32 * * * *"
+schedule:
+- cron: "32 * * * *"
+
+push:
+paths:
+- 'Movie_ott_Bd.zip'
+- 'requirements.txt'
+- '.github/workflows/movie_ott_bd.yml'
 
 permissions:
-  contents: write
+contents: write
+
+concurrency:
+group: movie-ott-bd-update
+cancel-in-progress: false
 
 jobs:
-  update:
-    runs-on: ubuntu-latest
+build:
+runs-on: ubuntu-latest
+timeout-minutes: 60
 
+steps:
+  - name: Checkout Repository
+    uses: actions/checkout@v4
+    with:
+      fetch-depth: 1
+
+  - name: Setup Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: '3.12'
+      cache: 'pip'
+      cache-dependency-path: requirements.txt
+
+  - name: Install Dependencies
+    run: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
+
+  - name: Verify Repository
+    run: |
+      echo "========== ROOT FILES =========="
+      find . -maxdepth 2 -type f | sort
+
+      test -f Movie_ott_Bd.zip || {
+        echo "ERROR: ZIP FILE NOT FOUND"
+        exit 1
+      }
+
+  - name: Extract Encrypted Python Source
     env:
-      MOVIE_OTT_BD_ZIP_PASS: ${{ secrets.MOVIE_OTT_BD_ZIP_PASS }}
+      ZIP_PASSWORD: ${{ secrets.MOVIE_OTT_BD_ZIP_PASS }}
+    run: |
+      python - <<'PY'
+      import os
+      import zipfile
+      import hashlib
 
-    steps:
+      archive = "Movie_ott_Bd.zip"
+      output = "Movie_ott_Bd.py"
+      password = os.environ.get("ZIP_PASSWORD", "")
 
-      # 1. CHECKOUT
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      print("Checking ZIP archive...")
 
-      # 2. PYTHON
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      with zipfile.ZipFile(archive, "r") as z:
+          bad = z.testzip()
 
-      # 3. FIND PROJECT FILES
-      - name: Find and Prepare Project Files
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import shutil
+          if bad:
+              raise RuntimeError(f"Corrupted ZIP member: {bad}")
 
-          root = Path.cwd()
+          names = z.namelist()
 
-          print("Searching repository...")
+          print("ZIP CONTENTS:")
+          for name in names:
+              print(" -", name)
 
-          for p in root.iterdir():
-              print("ROOT:", p.name)
-
-          # Find Python script
-          scripts = [
-              p for p in root.rglob("Movie_ott_Bd.py")
-              if ".git" not in p.parts
+          matches = [
+              name for name in names
+              if os.path.basename(name).lower() == output.lower()
           ]
 
-          if not scripts:
+          if not matches:
               raise FileNotFoundError(
-                  "Movie_ott_Bd.py NOT FOUND! "
-                  "Upload the Python source file to GitHub."
+                  "Movie_ott_Bd.py NOT FOUND INSIDE ZIP"
               )
 
-          source = scripts[0]
-          target = root / "Movie_ott_Bd.py"
+          if len(matches) > 1:
+              raise RuntimeError(
+                  "Multiple Movie_ott_Bd.py files found in ZIP"
+              )
 
-          if source.resolve() != target.resolve():
-              shutil.copy2(source, target)
+          try:
+              data = z.read(
+                  matches[0],
+                  pwd=password.encode() if password else None
+              )
+          except RuntimeError as e:
+              raise RuntimeError(
+                  "Incorrect ZIP password. "
+                  "Check MOVIE_OTT_BD_ZIP_PASS."
+              ) from e
 
-          print("Python script ready:", target)
+      if not data:
+          raise RuntimeError("Extracted Python file is empty")
 
-          # Find requirements
-          requirements = root / "requirements.txt"
+      with open(output, "wb") as f:
+          f.write(data)
 
-          if not requirements.exists():
+      print("Extraction successful!")
+      print("SHA256:", hashlib.sha256(data).hexdigest())
+      PY
 
-              candidates = [
-                  p for p in root.rglob("requirements.txt")
-                  if ".git" not in p.parts
-              ]
+  - name: Validate Python Source
+    run: |
+      python -m py_compile Movie_ott_Bd.py
+      echo "Python syntax validation successful."
 
-              if candidates:
-                  shutil.copy2(candidates[0], requirements)
+  - name: Run Movie OTT BD Generator
+    run: |
+      python -u Movie_ott_Bd.py
 
-              else:
-                  requirements.write_text(
-                      "requests==2.32.5\n"
-                      "pyzipper==0.3.6\n"
-                      "beautifulsoup4==4.14.2\n",
-                      encoding="utf-8"
-                  )
+  - name: Validate Playlist Output
+    run: |
+      echo "Checking generated playlist..."
 
-          print("Requirements ready.")
+      if [ ! -d Playlist ]; then
+        echo "Playlist directory not found."
+        exit 1
+      fi
 
-          assert target.is_file()
-          assert requirements.is_file()
+      find Playlist -type f -maxdepth 3 -print
 
-          print("SUCCESS: Project files found!")
-          PY
+      COUNT=$(find Playlist -type f | wc -l)
 
-      # 4. INSTALL
-      - name: Install Requirements
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      if [ "$COUNT" -eq 0 ]; then
+        echo "ERROR: No playlist generated!"
+        exit 1
+      fi
 
-      # 5. PASSWORD
-      - name: Check ZIP Password
-        run: |
-          if [ -z "$MOVIE_OTT_BD_ZIP_PASS" ]; then
-            echo "ERROR: MOVIE_OTT_BD_ZIP_PASS missing!"
-            exit 1
-          fi
+      echo "Generated files: $COUNT"
 
-          echo "ZIP password detected."
+  - name: Commit Updated Playlist
+    run: |
+      git config user.name "github-actions[bot]"
+      git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      # 6. RUN SCRIPT
-      - name: Run Movie OTT BD
-        run: |
-          python -u Movie_ott_Bd.py
+      git add Playlist/
 
-      # 7. CHECK OUTPUT
-      - name: Verify Playlist and ZIP
-        run: |
-          test -s output/Movie_ott_Bd.m3u8
-          test -s Movie_ott_Bd.zip
+      if git diff --cached --quiet; then
+        echo "No playlist changes detected."
+      else
+        git commit -m "Auto Update Movie OTT BD Playlist"
+        git push
+      fi
 
-          echo "Playlist generated."
-          echo "ZIP generated."
+  - name: Cleanup Temporary Source
+    if: always()
+    run: |
+      rm -f Movie_ott_Bd.py
+      echo "Temporary Python source cleaned."
 
-      # 8. VERIFY ENCRYPTION
-      - name: Verify AES-256 ZIP
-        run: |
-          python - <<'PY'
-          import os
-          import pyzipper
-
-          password = os.environ[
-              "MOVIE_OTT_BD_ZIP_PASS"
-          ].encode("utf-8")
-
-          with pyzipper.AESZipFile(
-              "Movie_ott_Bd.zip", "r"
-          ) as archive:
-
-              if not archive.namelist():
-                  raise RuntimeError("ZIP is empty!")
-
-              for name in archive.namelist():
-                  archive.read(name, pwd=password)
-
-          print("SUCCESS: AES ZIP verified!")
-          PY
-
-      # 9. COMMIT
-      - name: Commit and Push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add output/Movie_ott_Bd.m3u8 Movie_ott_Bd.zip
-
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
-          else
-            git commit -m "Auto update Movie OTT BD playlist"
-            git push
-          fi
+  - name: Workflow Summary
+    if: always()
+    run: |
+      echo "## MOVIE OTT BD UPDATE" >> $GITHUB_STEP_SUMMARY
+      echo "- Workflow: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+      echo "- Python: 3.12" >> $GITHUB_STEP_SUMMARY
+      echo "- ZIP extraction: Completed if extraction step passed" >> $GITHUB_STEP_SUMMARY
+      echo "- Playlist: Playlist/" >> $GITHUB_STEP_SUMMARY
