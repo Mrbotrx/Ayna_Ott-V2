@@ -1,20 +1,20 @@
 MOVIE OTT BD UPDATE REPORT
 =============================================
-Generated: 2026-11-28 06:10:25 Asia/Dhaka
+Generated: 2026-11-28 14:15:27 Asia/Dhaka
 
-Total Movies: 349
+Total Movies: 350
 Playable Movies: 21
-Metadata Only: 328
+Metadata Only: 329
 API Denied: 0
 Total Channels: 22
 
 ACCESS LEVEL STATISTICS
 =============================================
-subscription: 349
+subscription: 350
 
 UNPLAYABLE REASONS
 =============================================
-Stream unavailable: 327
+Stream unavailable: 328
   - Frozen 2013
   - Your Name 2016
   - Ranjana Ami Abar Ashbo (2025)
@@ -302,45 +302,46 @@ Stream unavailable: 327
   - The Pirates In an Adventure with Scientists (2025)
   - Chaahat (2025)
   - Dishoom (2025)
-  - Lafangey Parindey (2025)
   - Drishyam (2025)
+  - Lafangey Parindey (2025)
   - Pan (2026)
   - Date Night (2025)
   - Man of Steel (2026)
   - Closed Circuit (2025)
   - Prem Ratan Dhan Payo (2025)
-  - Killing Daddy (2026)
-  - Tamasha (2025)
-  - Dangal (2025)
   - Beneath Hill 60 (2025)
+  - Killing Daddy (2026)
+  - Dangal (2025)
+  - Tamasha (2025)
   - Horror Story (2025)
   - The Delta Force (2025)
   - Dead Man Down (2025)
   - The Amazing Spider Man 2 (2026)
   - Blue Lagoon The Awakening (2025)
+  - Kingdom of the Planet of the Apes (2025)
   - Kraken Tentacles of the Deep (2025)
   - Infini (2026)
-  - Kingdom of the Planet of the Apes (2025)
   - Rise of the Planet of the Apes (2025)
   - Shanghai (2025)
   - Edge of the Garden (2025)
   - Iqbal (2025)
   - Baadshah (2025)
   - Thuppakki (2025)
-  - O Saathiya (2025)
   - Namak Haraam (2025)
+  - O Saathiya (2025)
   - Armageddon (2025)
   - Boro Bhai (2025)
   - The Calling (2026)
   - Black Friday (2025)
   - Jodhaa Akbar (2025)
   - Hameshaa (2025)
-  - The Last Survivors (2026)
   - Furiosa A Mad Max Saga (2025)
   - Devil's Playground (2025)
+  - The Last Survivors (2026)
   - Malli Malli Idhi Rani Roju (2025)
   - Tower Heist (2025)
   - Om Shanti Om (2025)
   - The Hunger Games (2025)
+  - Love or Money (2025)
 Duplicate stream: 1
   - SOB PREMER GOLPO EK NOY (2025)
