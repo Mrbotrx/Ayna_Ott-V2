@@ -18,43 +18,43 @@
 #
 # =====================================
 
-#EXTINF:-1 tvg-id="" tvg-name="Mirror Mirror (2012)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-07-27/tmdb_content_mirror-mirror-2012-poster-eYWiew.jpg" group-title="Tarsem Singh",Mirror Mirror (2012)
+#EXTINF:-1 tvg-id="" tvg-name="Mirror Mirror (2012)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-07-27/tmdb_content_mirror-mirror-2012-poster-eYWiew.jpg" group-title="Adventure",Mirror Mirror (2012)
 https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
 
-#EXTINF:-1 tvg-id="" tvg-name="Emelie (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/9e1bdc2a8f6f0fb6b3bb8558d2fab9c7.jpg" group-title="Thriller",Emelie (2026)
+#EXTINF:-1 tvg-id="" tvg-name="Emelie (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/9e1bdc2a8f6f0fb6b3bb8558d2fab9c7.jpg" group-title="Michael Thelin",Emelie (2026)
 https://vods2.aynaott.com/vod/movies/english_old/Emelie_(2015).mp4/index.m3u8
 
-#EXTINF:-1 tvg-id="" tvg-name="Coffee Shop (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/a4ef47746aa177e1567ee7f49828b193.jpg" group-title="TV Movie",Coffee Shop (2026)
+#EXTINF:-1 tvg-id="" tvg-name="Coffee Shop (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/a4ef47746aa177e1567ee7f49828b193.jpg" group-title="Kevin Sorbo",Coffee Shop (2026)
 https://vods2.aynaott.com/vod/movies/english_old/Coffee_Shop_(2014).mp4/index.m3u8
 
-#EXTINF:-1 tvg-id="" tvg-name="A Novel Romance (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/7e651523c0e07449a07ebc703da4c968.jpg" group-title="Comedy",A Novel Romance (2026)
+#EXTINF:-1 tvg-id="" tvg-name="A Novel Romance (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/7e651523c0e07449a07ebc703da4c968.jpg" group-title="TV Movie",A Novel Romance (2026)
 https://vods2.aynaott.com/vod/movies/english_old/A_Novel_Romance_(2015).mp4/index.m3u8
 
-#EXTINF:-1 tvg-id="" tvg-name="Lady Chatterley's Lover (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/71b642600e1892f587c5ab48b00bf589.jpg" group-title="Drama",Lady Chatterley's Lover (2026)
+#EXTINF:-1 tvg-id="" tvg-name="Lady Chatterley's Lover (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/71b642600e1892f587c5ab48b00bf589.jpg" group-title="Howard Ward",Lady Chatterley's Lover (2026)
 https://vods2.aynaott.com/vod/movies/english_old/Lady_Chatterleys_Lover_(2015).mp4/index.m3u8
 
-#EXTINF:-1 tvg-id="" tvg-name="Prism (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/eb91af13e653cef02d6740e1c1f07ca9.jpg" group-title="Jimmy Palumbo",Prism (2026)
+#EXTINF:-1 tvg-id="" tvg-name="Prism (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/eb91af13e653cef02d6740e1c1f07ca9.jpg" group-title="Cal Robertson",Prism (2026)
 https://vods2.aynaott.com/vod/movies/english_old/Prism_(2015).mp4/index.m3u8
 
-#EXTINF:-1 tvg-id="" tvg-name="Poker Night (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/6c96869ae4d6a87b6642dd1fef4ffc67.jpg" group-title="Corey Large",Poker Night (2026)
+#EXTINF:-1 tvg-id="" tvg-name="Poker Night (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/6c96869ae4d6a87b6642dd1fef4ffc67.jpg" group-title="Titus Welliver",Poker Night (2026)
 https://vods2.aynaott.com/vod/movies/english_old/Poker_Night_(2014).mp4/index.m3u8
 
 #EXTINF:-1 tvg-id="" tvg-name="Mistress America (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/41c904f99e5c81a33458466c9dff236b.jpg" group-title="Noah Baumbach",Mistress America (2026)
 https://vods2.aynaott.com/vod/movies/english_old/Mistress_America_(2015).mp4/index.m3u8
 
-#EXTINF:-1 tvg-id="" tvg-name="Mississippi Grind (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/83ac0869f4a9940d070fc0175b6a4b77.jpg" group-title="Anna Boden",Mississippi Grind (2026)
+#EXTINF:-1 tvg-id="" tvg-name="Mississippi Grind (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/83ac0869f4a9940d070fc0175b6a4b77.jpg" group-title="Ryan Fleck",Mississippi Grind (2026)
 https://vods2.aynaott.com/vod/movies/english_old/Mississippi_Grind_(2015).mp4/index.m3u8
 
-#EXTINF:-1 tvg-id="" tvg-name="Kingsman The Secret Service (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/c313cee89f97a8b365580d2370193089.jpg" group-title="Jack Davenport",Kingsman The Secret Service (2026)
+#EXTINF:-1 tvg-id="" tvg-name="Kingsman The Secret Service (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/c313cee89f97a8b365580d2370193089.jpg" group-title="Crime",Kingsman The Secret Service (2026)
 https://vods2.aynaott.com/vod/movies/english_old/Kingsman_The_Secret_Service_(2014).mp4/index.m3u8
 
-#EXTINF:-1 tvg-id="" tvg-name="Seventh Son (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/35f51eb964aef636f45799c3d6baa789.jpg" group-title="Jason Scott Lee",Seventh Son (2026)
+#EXTINF:-1 tvg-id="" tvg-name="Seventh Son (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/35f51eb964aef636f45799c3d6baa789.jpg" group-title="Fantasy",Seventh Son (2026)
 https://vods2.aynaott.com/vod/movies/english_old/Seventh_Son_(2014).mp4/index.m3u8
 
 #EXTINF:-1 tvg-id="" tvg-name="Silent Love (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/576830faa0002c4708151e68d4a8e290.jpg" group-title="Francesca Germini",Silent Love (2026)
 https://vods2.aynaott.com/vod/movies/english_old/Silent_Love_(2024).mp4/index.m3u8
 
-#EXTINF:-1 tvg-id="" tvg-name="Selma (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/06f47605836be1e09d396e73c32b93ff.jpg" group-title="David Oyelowo",Selma (2026)
+#EXTINF:-1 tvg-id="" tvg-name="Selma (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/06f47605836be1e09d396e73c32b93ff.jpg" group-title="Drama",Selma (2026)
 https://vods2.aynaott.com/vod/movies/english_old/Selma_(2014).mp4/index.m3u8
 
 #EXTINF:-1 tvg-id="" tvg-name="Slow West (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/598eed0e71406a82605439df90ef1eec.jpg" group-title="Drama",Slow West (2026)
@@ -72,13 +72,13 @@ https://vods2.aynaott.com/vod/movies/english_old/The_Girl_King_(2015).mp4/index.
 #EXTINF:-1 tvg-id="" tvg-name="Tell (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/743bf43574d441347636c79f6282a168.jpg" group-title="Timothy Williams",Tell (2026)
 https://vods2.aynaott.com/vod/movies/english_old/Tell_(2014).mp4/index.m3u8
 
-#EXTINF:-1 tvg-id="" tvg-name="Spare Parts (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/f15d67bb3e3b49d69716c026e37246ed.jpg" group-title="George López",Spare Parts (2026)
+#EXTINF:-1 tvg-id="" tvg-name="Spare Parts (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/f15d67bb3e3b49d69716c026e37246ed.jpg" group-title="Sean McNamara",Spare Parts (2026)
 https://vods2.aynaott.com/vod/movies/english_old/Spare_Parts_(2015).mp4/index.m3u8
 
-#EXTINF:-1 tvg-id="" tvg-name="Strange Magic (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/7b59fc2c23e7f3c9acbba74a65eb40f3.jpg" group-title="Kristin Chenoweth",Strange Magic (2026)
+#EXTINF:-1 tvg-id="" tvg-name="Strange Magic (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/7b59fc2c23e7f3c9acbba74a65eb40f3.jpg" group-title="Fantasy",Strange Magic (2026)
 https://vods2.aynaott.com/vod/movies/english_old/Strange_Magic_(2015).mp4/index.m3u8
 
-#EXTINF:-1 tvg-id="" tvg-name="Everyday Miracles (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/d2918281bc9438b375d93cd6057625d1.jpg" group-title="Marty Madden",Everyday Miracles (2026)
+#EXTINF:-1 tvg-id="" tvg-name="Everyday Miracles (2026)" tvg-logo="https://web.aynaott.com/storage/019dd92f-107c-7056-9e79-e5233f6e51d9/uploads/images/2026-06-24/d2918281bc9438b375d93cd6057625d1.jpg" group-title="Western",Everyday Miracles (2026)
 https://vods2.aynaott.com/vod/movies/english_old/Everyday_Miracles_(2015).mp4/index.m3u8
 
 #EXTINF:-1 tvg-name="KALLYAN TV" tvg-logo="https://raw.githubusercontent.com/Mrbotrx/Mrbotrx/refs/heads/main/IPTV_LINKS_LOGO.jpg" group-title="KBTV",KALLYAN TV
